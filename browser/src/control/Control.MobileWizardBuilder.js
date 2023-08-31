@@ -14,19 +14,21 @@ L.Control.MobileWizardBuilder = L.Control.JSDialogBuilder.extend({
 	},
 
 	_overrideHandlers: function() {
-		this._controlHandlers['grid'] = this._gridHandler;
-		this._controlHandlers['frame'] = this._frameHandler;
-		this._controlHandlers['listbox'] = this._listboxControl;
-		this._controlHandlers['checkbox'] = this._checkboxControl;
 		this._controlHandlers['basespinfield'] = this.baseSpinField;
-		this._controlHandlers['radiobutton'] = this._radiobuttonControl;
+		this._controlHandlers['checkbox'] = this._checkboxControl;
+		this._controlHandlers['combobox'] = this._comboboxControl;
+		this._controlHandlers['comboboxentry'] = JSDialog.mobileComboboxEntry;
 		this._controlHandlers['edit'] = this._editControl;
-		this._controlHandlers['panel'] = this._panelHandler;
-		this._controlHandlers['toolbox'] = this._toolboxHandler;
+		this._controlHandlers['frame'] = this._frameHandler;
+		this._controlHandlers['grid'] = this._gridHandler;
+		this._controlHandlers['listbox'] = this._listboxControl;
 		this._controlHandlers['mobile-popup-container'] = this._mobilePopupContainer;
-		this._controlHandlers['tabcontrol'] = JSDialog.mobileTabControl;
+		this._controlHandlers['panel'] = this._panelHandler;
 		this._controlHandlers['paneltabs'] = JSDialog.mobilePanelControl;
+		this._controlHandlers['radiobutton'] = this._radiobuttonControl;
 		this._controlHandlers['scrollwindow'] = undefined;
+		this._controlHandlers['tabcontrol'] = JSDialog.mobileTabControl;
+		this._controlHandlers['toolbox'] = this._toolboxHandler;
 
 		this._toolitemHandlers['.uno:FontworkAlignmentFloater'] = function () { return false; };
 		this._toolitemHandlers['.uno:FontworkCharacterSpacingFloater'] = function () { return false; };
@@ -168,6 +170,25 @@ L.Control.MobileWizardBuilder = L.Control.JSDialogBuilder.extend({
 		}
 
 		return false;
+	},
+
+	_comboboxControl: function(parentContainer, data, builder) {
+		if (data.id === 'searchterm' ||
+			data.id === 'replaceterm') {
+			// Replace combobox with edit in mobile find & replace dialog
+			var callback = function(value) {
+				builder.callback('combobox', 'change', data, value, builder);
+			};
+
+			builder._controlHandlers['edit'](parentContainer, data, builder, callback);
+		} else if (data.id === 'applystyle' ||
+			data.id === 'fontnamecombobox' ||
+			data.id === 'fontsizecombobox' ||
+			data.id === 'fontsize' ||
+			data.id === 'FontBox') {
+			builder._listboxControl(parentContainer, data, builder);
+		} else
+			builder._explorableEditControl(parentContainer, data, builder);
 	},
 
 	_listboxControl: function(parentContainer, data, builder) {

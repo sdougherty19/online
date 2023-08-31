@@ -52,6 +52,10 @@ L.Control.JSDialogBuilder = L.Control.extend({
 
 	_currentDepth: 0,
 
+	rendersCache: {
+		fontnamecombobox: { persistent: true, images: [] }
+	}, // eg. custom renders for combobox entries
+
 	setWindowId: function (id) {
 		this.windowId = id;
 	},
@@ -83,8 +87,8 @@ L.Control.JSDialogBuilder = L.Control.extend({
 		this._controlHandlers['okbutton'] = this._pushbuttonControl;
 		this._controlHandlers['helpbutton'] = this._pushbuttonControl;
 		this._controlHandlers['cancelbutton'] = this._pushbuttonControl;
-		this._controlHandlers['combobox'] = this._comboboxControl;
-		this._controlHandlers['comboboxentry'] = this._comboboxEntry;
+		this._controlHandlers['combobox'] = JSDialog.combobox;
+		this._controlHandlers['comboboxentry'] = JSDialog.comboboxEntry;
 		this._controlHandlers['listbox'] = this._listboxControl;
 		this._controlHandlers['valueset'] = this._valuesetControl;
 		this._controlHandlers['fixedtext'] = this._fixedtextControl;
@@ -1159,13 +1163,13 @@ L.Control.JSDialogBuilder = L.Control.extend({
 			}
 			var isMultiTabJSON = tabs > 1;
 
-			var tabWidgetRootContainer = L.DomUtil.create('div', 'ui-tabs-root ' + builder.options.cssClass + ' ui-widget', parentContainer);
+			var tabWidgetRootContainer = L.DomUtil.create('div', 'ui-tabs-root ' + builder.options.cssClass, parentContainer);
 			tabWidgetRootContainer.id = data.id;
 
 			var tabsContainer = L.DomUtil.create('div', 'ui-tabs ' + builder.options.cssClass + ' ui-widget', builder.options.useSetTabs ? undefined : tabWidgetRootContainer);
 			tabsContainer.setAttribute('role', 'tablist');
 
-			var contentsContainer = L.DomUtil.create('div', 'ui-tabs-content ' + builder.options.cssClass + ' ui-widget', tabWidgetRootContainer);
+			var contentsContainer = L.DomUtil.create('div', 'ui-tabs-content ' + builder.options.cssClass, tabWidgetRootContainer);
 
 			var tabs = [];
 			var contentDivs = [];
@@ -1852,32 +1856,6 @@ L.Control.JSDialogBuilder = L.Control.extend({
 			$(sectionTitle).hide();
 	},
 
-	// todo: implement real combobox with entry field and listbox at the same time
-	_comboboxControl: function(parentContainer, data, builder) {
-		if (data.id === 'searchterm' ||
-			data.id === 'replaceterm') {
-			// Replace combobox with edit in mobile find & replace dialog
-			var callback = function(value) {
-				builder.callback('combobox', 'change', data, value, builder);
-			};
-
-			builder._controlHandlers['edit'](parentContainer, data, builder, callback);
-		} else if (data.id === 'applystyle' ||
-			data.id === 'fontnamecombobox' ||
-			data.id === 'fontsizecombobox' ||
-			data.id === 'fontsize' ||
-			data.id === 'FontBox' ||
-			data.id === 'rotation' ||
-			data.id === 'LB_ANGLE' ||
-			data.id === 'LB_DISTANCE' ||
-			!window.mode.isMobile()) {
-			builder._listboxControl(parentContainer, data, builder);
-		} else if (window.mode.isMobile())
-			builder._explorableEditControl(parentContainer, data, builder);
-		else
-			window.app.console.warn('Unsupported combobox control!');
-	},
-
 	_listboxControl: function(parentContainer, data, builder) {
 		var title = data.text;
 		var selectedEntryIsString = false;
@@ -1976,23 +1954,6 @@ L.Control.JSDialogBuilder = L.Control.extend({
 		}
 
 		return false;
-	},
-
-	_comboboxEntry: function(parentContainer, data, builder) {
-		var comboboxEntry = L.DomUtil.create('p', builder.options.cssClass, parentContainer);
-		comboboxEntry.textContent = builder._cleanText(data.text);
-
-		comboboxEntry.parent = data.parent;
-
-		if (data.style && data.style.length)
-			L.DomUtil.addClass(comboboxEntry, data.style);
-
-		$(comboboxEntry).click(function () {
-			builder.refreshSidebar = true;
-			if (builder.wizard)
-				builder.wizard.goLevelUp();
-			builder.callback('combobox', 'selected', comboboxEntry.parent, data.pos + ';' + comboboxEntry.textContent, builder);
-		});
 	},
 
 	_fixedtextControl: function(parentContainer, data, builder) {
@@ -3343,6 +3304,17 @@ L.Control.JSDialogBuilder = L.Control.extend({
 						control.setSelectionRange(start, end);
 				}
 			}
+			break;
+
+		case 'rendered_combobox_entry':
+			if (!this.rendersCache[control.id])
+				this.rendersCache[control.id] = { persistent: false, images: [] };
+
+			this.rendersCache[control.id].images[data.pos] = data.image;
+
+			if (typeof control.updateRenders == 'function')
+				control.updateRenders(data.pos);
+
 			break;
 
 		default:
