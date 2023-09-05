@@ -904,6 +904,7 @@ L.Control.NotebookbarDraw = L.Control.NotebookbarImpress.extend({
 						'children': [
 								{
 									'id': 'home-search',
+									'class': 'unoSearch',
 									'type': 'menubartoolitem',
 									'text': _('Search'),
 									'command': _('Show Status Bar'),
@@ -1192,6 +1193,7 @@ L.Control.NotebookbarDraw = L.Control.NotebookbarImpress.extend({
 			},
 			(this._map['wopi'].EnableRemoteLinkPicker) ? {
 				'id': 'insert-remote-link',
+				'class': 'unoremotelink',
 				'type': 'bigcustomtoolitem',
 				'text': _('Smart Picker'),
 				'command': 'remotelink',
